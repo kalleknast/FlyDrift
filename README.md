@@ -72,8 +72,14 @@ The most robust way to simulate this is the **Lumped Mass Method**. The line is 
 
 1. **Discretization**: Divide the tippet into $N$ segments connected by massless springs (representing elasticity) or rigid rods (if inextensible).
 2. **State Vector**: Define the position $(x_i, y_i)$ and velocity $(\dot{x}_i, \dot{y}_i)$ for every node $i$. Node 0 is the fly; Node $N$ is the rod tip/indicator at the surface.
-3. **Force Calculation Loop**:For each node $i$ at height $y_i$, calculate the local water velocity $u(y_i)$.Calculate Drag Force on the node based on $u(y_i) - \dot{x}_i$.Calculate Tension forces from neighbor nodes ($i-1$ and $i+1$) based on Hooke’s Law: $T = k(|\vec{r}_{i+1} - \vec{r}_i| - L_{seg})$.Add Gravity/Buoyancy.
-4. **Time Stepping**: Use a numerical integrator (e.g., Runge-Kutta 4 or Euler) to update positions:
+3. **Force Calculation Loop**:
+
+* For each node $i$ at height $y_i$, calculate the local water velocity $u(y_i)$.
+* Calculate Drag Force on the node based on $u(y_i) - \dot{x}_i$.
+* Calculate Tension forces from neighbor nodes ($i-1$ and $i+1$) based on Hooke’s Law: $T = k(|\vec{r}_{i+1} - \vec{r}_i| - L_{seg})$.
+* Add Gravity/Buoyancy.
+
+1. **Time Stepping**: Use a numerical integrator (e.g., Runge-Kutta 4 or Euler) to update positions:
 
 $$\vec{a}_i = \frac{\sum \vec{F}_{acting\_on\_i}}{m_i}$$$$\vec{v}_{i, t+\Delta t} = \vec{v}_{i, t} + \vec{a}_i \Delta t$$$$\vec{p}_{i, t+\Delta t} = \vec{p}_{i, t} + \vec{v}_{i, t+\Delta t} \Delta t$$
 
