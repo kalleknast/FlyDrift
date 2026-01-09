@@ -202,13 +202,28 @@ def simulate(
     vx = sol.y[2*segments+2:4*segments+3:2]
     vy = sol.y[2*segments+3:4*segments+4:2]
     t = sol.t
-    water_vx = ut.get_river_velocity(y, river_depth, surface_velocity, river_profile_exp)
+    water_vx = ut.get_river_velocity(y, 
+                                     river_depth, 
+                                     surface_velocity, 
+                                     river_profile_exp)
 
-    drift = {'x': x, 
-             'y': y, 
-             'vx': vx, 
-             'vy': vy, 
-             'water_vx': water_vx,
-             't': t}
+    drift = {
+        'x': x, 
+        'y': y, 
+        'vx': vx, 
+        'vy': vy, 
+        'water_vx': water_vx,
+        't': t,
+        'river_depth': river_depth,
+        'surface_velocity': surface_velocity,
+        'river_profile_exp': river_profile_exp,
+        'tippet_diameter': tippet_diameter,
+        'tippet_length': tippet_length,
+        'tippet_density': TIPPET_DENSITY,
+        'fly_mass': fly_mass,
+        'fly_diameter': fly_diameter,
+        'bugginess': bugginess,
+        'rod_tip_speed_factor': rod_tip_speed_factor,
+             }
 
-    return drift    
+    return drift

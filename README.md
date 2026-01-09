@@ -2,17 +2,19 @@
 
 This project simulates the dynamics of the tippet and nymph fished euro-style in a river current. It uses a physics-based approach to model the interaction between the water flow, the tippet and nymph.
 
+**NOTE:** These simulations have **NOT** been experimentally verified. So while the trends (directions of the effects) likely are correct the absolute values may not be.
+
 ## Physics of Drift
 
 As clearly demonstrated in [Modern Nymphing: European Inspired Techniques](https://tacticalflyfisher.com/products/modern-nymphing-european-inspired-techniques-dvd-featuring-devin-olsen-and-lance-egan) by Lance Egan and Devin Olsen, the surface water flows much faster than the bottom water. This impacts the drift of a nymph close to the bottom.
 
-The drift of a nymph is governed by the competition between the local forces on the fly (which try to move it at the speed of the water surrounding the fly) and the drag forces on the tippet (which is continuously pulled downstream by the faster surface currents).
+The drift of a nymph is governed by the competition between the local forces on the fly (which try to move it at the speed of the water surrounding the fly) and the drag forces on the tippet (which is continuously pulled downstream by the faster surface currents). This dynamic is analogous to towed cable systems described in the literature, where the shape and depth of the line are dictated by the balance of hydrodynamic drag, tension, and gravity (Spolek, 2007).
 
--   **Drift Velocity**: In scenarios when the nymph is not corrected and drifted "dead drift", the nymph will drift faster than the bottom water around it. This is because the tippet pass through the higher-velocity upper water column, acting like a sail that pulls the nymph downstream.
+-   **Drift Velocity**: In scenarios when the nymph is not corrected and drifted "dead drift", the nymph will drift **faster** than the bottom water around it. This is because the tippet pass through the higher-velocity upper water column, acting like a sail that pulls the nymph downstream. This mirrors the behavior of towed systems where drag forces on the cable drive the configuration (Spolek, 2007).
 
 -   **Influence of Parameters**:
 
--   *Nymph Weight (0.1 - 0.5g)*: Heavier nymphs sink faster, reaching the slower bottom layer sooner. Once there, their inertia and potential friction with the riverbed (ticking) help retard the downstream pull of the tippet.
+-   *Nymph Weight (0.1 - 0.5g)*: Heavier objects sink faster and maintain depth better against drag forces. In towed systems, specific gravity is a primary determinant of the sinking angle and depth. Heavier nymphs reach the slower boundary layer sooner, where inertia helps retard the downstream pull.
 
 -   *Tippet Diameter (0.1–0.3mm)*: Thicker tippets have more surface area ($A_{projected} = \text{diameter} \times \text{length}$), experiencing significantly higher drag from the fast surface water. This increases the unnatural downstream speed of the nymph. Thin tippets are critical for achieving a true dead drift that matches the bottom speed.
 
@@ -24,7 +26,7 @@ To simulate this, we treat the system as a **Tethered Underwater System**, simil
 
 ### The River Velocity Profile
 
-Rivers do not flow at a uniform speed. Friction with the riverbed causes the water to slow down significantly near the bottom. This is modeled using the [**Logarithmic Law of the Wall**](https://en.wikipedia.org/wiki/Law_of_the_wall):
+Rivers do not flow at a uniform speed. Friction with the riverbed causes the water to slow down significantly near the bottom. Standard fluid dynamics models the friction with the riverbed using the [**Logarithmic Law of the Wall**](https://en.wikipedia.org/wiki/Law_of_the_wall):
 
 $$u(y) = \frac{u_*}{\kappa} \ln\left(\frac{y}{z_0}\right)$$
 
@@ -43,21 +45,38 @@ where $h$ is the river depth.
 
 ### Forces on the Nymph
 
-The nymph is modeled as a point mass or small sphere subjected to three forces:
+The nymph is modeled as a point mass or small sphere subjected to three forces [Yang et al (2022)]:
 
-**Gravity ($F_g$):** Pulls downwards. $F_g = m_{fly} g$.
+**Graviy ($F_g$):** Pulls downwards. $F_g = m_{fly} g$.
 
 **Buoyancy ($F_b$):** Pushes upwards. $F_b = \rho_{water} V_{fly} g$.
 
-**Hydrodynamic Drag ($F_{d,fly}$):** Acts opposite to the relative velocity between the water and the fly.
+**Hydrodynamic Drag ($F_{d,fly}$):** Acts opposite to the relative velocity between the water and the fly [Dowling (1988); Spolek (2007)].
 
 $$F_{d,fly} = \frac{1}{2} \rho_{water} C_{D,fly} A_{fly} |u(y_{fly}) - v_{fly}| (u(y_{fly}) - v_{fly})$$
 
+**Drag Coefficient ($C_D$):**
+For a sphere in the transition regime (typical for sinking nymphs):
+
+$$C_{sphere}(Re) = \frac{24}{Re} + \frac{6}{1 + \sqrt{Re}} + 0.4$$
+
+(This captures the high drag at low speeds/small sizes).
+
+**The "Bushiness" Multiplier ($\beta$):**
+
+To differentiate between a slim Perdigon and a fluffy Woolly Bugger:
+
+$$C_{D,fly} = \beta \times C_{sphere}(Re)$$
+
+* $\beta = 1.0$: Smooth bead/Epoxy fly.
+* $\beta = 1.5 - 2.0$: Standard Nymph (Pheasant Tail).
+* $\beta > 3.0$: Large stonefly or streamer.
+
 ### Forces on the Tippet
 
-The tippet is a flexible cylinder spanning from the surface to the fly. It experiences **distributed drag** that varies with depth. Following the Morison Equation approach seen in cable dynamics literature (e.g., Dowling, Part 1), the force per unit length is split into normal and tangential components.
+The tippet is a flexible cylinder spanning from the surface to the fly. It experiences **distributed drag** that varies with depth. Following the Morison Equation approach seen in cable dynamics literature, the force per unit length is split into normal and tangential components [Dowling (1987); Dowling (1988); Yang (2022)].
 
-Because the tippet is nearly vertical, the **Normal Drag** ($F_n$) is the dominant force pushing the tippet downstream:
+Because the tippet is nearly vertical, the **Normal Drag** ($F_n$) is the dominant force pushing the tippet downstream [Spolek (2007)]:
 
 $$F_n(y) = \frac{1}{2} \rho_{water} C_{D,tippet} d_{tippet} (u(y) - v_{tippet,x}(y))^2$$
 
@@ -66,21 +85,32 @@ $$F_n(y) = \frac{1}{2} \rho_{water} C_{D,tippet} d_{tippet} (u(y) - v_{tippet,x}
 
 **Key Insight:** Since $u(y)$ is large near the surface, $F_n$ is large at the top of the tippet, creating a strong moment that pulls the bottom nymph forward.
 
+### The Rod Tip
+ 
+Anglers often manipulate the speed of the rod tip relative to the surface water. This changes the Towing Velocity ($U$) discussed in the literature:
+
+* **Factor < 1 (Holding Back)**: The rod tip moves slower than the surface current. This is common in Euro nymphing techniques. By slowing the top of the line, the angler attempts to counteract the downstream belly, though it can also lift the fly due to increased tension [Spolek (2007)].
+* **Factor > 1 (Towing)**: The rod tip moves faster than the current. The results is that the fly will be towed faster than the surrounding water and thus stay higher in the water column. The system behaves like the towed cable models in Dowling (1987; 1988), where the high towing speed ($U$) increases the drag forces and lifts the cable (and fly) toward the surface.
+* **Factor = 1 ("Dead Drift")**: The baseline scenario where the rod tip tracks perfectly with the surface water. This is often called dead drift, but it's important to note that the nymph under this condition will drift faster than the surrounding water. That is, the nymph itself isn't in a dead drift as it will be trailing the rod tip.
+
+The `ROD_TIP_SPEED_FACTOR` is a multiplier applied to the surface water velocity.
+
+$$V_{tip} = V_{surface} \times \text{Factor}$$
+
 ## Simulation Method: Lumped Mass Model
 
-The most robust way to simulate this is the [**Lumped Mass Method**](https://www.sciencedirect.com/topics/engineering/lumped-mass-model). The tippet is divided into $N$ small segments (nodes).
+The most robust way to simulate this is the [**Lumped Mass Method**](https://www.sciencedirect.com/topics/engineering/lumped-mass-model). The tippet is divided into $N$ small segments (nodes) [Yang (2022); Sjöberg (1991)].
 
 ### Steps
 
-1.  **Discretization**: Divide the tippet into $N$ segments connected by massless springs (representing elasticity) or rigid rods (if inextensible).
+1.  **Discretization**: Divide the tippet into $N$ segments connected by massless springs (representing elasticity) or rigid rods (if inextensible). The fluid forces are often integrated over these segments and applied to the nodes [Yang et al (2022)].
 2.  **State Vector**: Define the position $(x_i, y_i)$ and velocity $(\dot{x}_i, \dot{y}_i)$ for every node $i$. Node $0$ is the fly; Node $N$ is the rod tip/indicator at the surface.
 3.  **Force Calculation Loop**:
     -   For each node $i$ at height $y_i$, calculate the local water velocity $u(y_i)$.
-    -   Calculate Drag Force on the node based on $u(y_i) - \dot{x}_i$.
-    -   Calculate Tension forces from neighbor nodes ($i-1$ and $i+1$) based on Hooke's Law: $T = k(|\vec{r}_{i+1} - \vec{r}_i| - L_{seg})$.
-    -   Add Gravity/Buoyancy. 
-
-4.**Time Stepping**: Use a numerical integrator (e.g., Runge-Kutta 4 or Euler) to update positions:
+    -   Calculate Drag Force on the node based on $u(y_i) - \dot{x}_i$ [Yang et al (2022)].
+    -   Calculate Tension forces from neighbor nodes ($i-1$ and $i+1$) based on Hooke's Law: $T = k(|\vec{r}_{i+1} - \vec{r}_i| - L_{seg})$ [Sjöberg (1991)].
+    -   Add Gravity/Buoyancy [Dowling (1988)]. 
+4.  **Time Stepping**: Use a numerical integrator (e.g., Runge-Kutta 4 or Euler) to update positions [Sjöberg (1991); Ya
 
 $$\vec{a}_i = \frac{\sum \vec{F}_{acting\_on\_i}}{m_i}$$ $$\vec{v}_{i, t+\Delta t} = \vec{v}_{i, t} + \vec{a}_i \Delta t$$ $$\vec{p}_{i, t+\Delta t} = \vec{p}_{i, t} + \vec{v}_{i, t+\Delta t} \Delta t$$
 
@@ -110,7 +140,7 @@ Use the `simulate` function from `simulate.py`. You can customize parameters lik
 
 The `visualize.py` module provides functions to plot static graphs (`plot_drift`) or generate animations (`make_movie`).
 
-### Example Script
+### 3. Example Script
 
 Here is a complete example of how to run a simulation and visualize the result:
 
@@ -158,29 +188,6 @@ make_movie(
 )
 ```
 
-## Simulation Principles & Physics
+![Static plot: drift simulation from the above example.](https://github.com/kalleknast/FlyDrift/blob/main/figs/drift_result.png)
 
-The simulation relies on a discretized mass-spring-damper like system, refined with **Position Based Dynamics (PBD)** constraints for stability and inextensibility.
-
-### 1. River Flow Model
-
-The river flow is modeled using a power-law velocity profile, which is common in open-channel flow hydraulics: $$ v(y) = v_{surface} \cdot \left( \frac{y}{depth} \right)^{1/4} $$
-
--   **v(y)**: Velocity at depth y.
--   **v_surface**: Surface velocity in m/s.
--   **y**: Distance from the river bottom.
--   **depth**: Total depth of the river.
-
-### 2. Tippet & Fly Physics
-
-The tippet is approximated as a chain of connected **Nodes** (point masses).
-
--   **Gravity**: Applied to all nodes ($F = mg$).
--   **Buoyancy**: Archimedes' principle is applied based on the volume of the tippet segments and the density of water. $$ F_b = V_{segment} \cdot \rho_{water} \cdot g $$
--   **Drag (Hydrodynamics)**: A semi-implicit drag formulation is used to simulate fluid resistance. The drag force is proportional to the square of the relative velocity between the water and the tippet node. $$ F_{drag} \propto C_d \cdot A \cdot |v_{rel}|^2 $$
-    -   *Note*: The simulation distinguishes between submerged segments (drag applied) and segments in the air (no drag/ballistic motion).
--   **Constraint Solving (PBD)**: Instead of using stiff springs which can be unstable, the length of tippet segments is enforced using an iterative constraint solver. This ensures the tippet behaves like a rope (inextensible) rather than a rubber band.
-
-### Collision Handling
-
--   **River Bed**: Inelastic collision with the bottom ($y=0$). Friction is simulated by reducing horizontal velocity upon contact.
+![Animation: drift simulation from the above example.](https://github.com/kalleknast/FlyDrift/blob/main/figs/drift_animation.gif)

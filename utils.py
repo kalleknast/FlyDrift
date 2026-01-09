@@ -51,7 +51,16 @@ def get_river_velocity(y_positions, river_depth, surface_velocity, river_profile
 
 
 def get_fly_drag_coeff(v_rel_mag, diam, bugginess=None):
-    if v_rel_mag < 1e-6: return 0.0
+    """
+    Docstring for get_fly_drag_coeff
+    
+    :param v_rel_mag: Description
+    :param diam: Description
+    :param bugginess: Description
+    """
+    if v_rel_mag < 1e-6:
+        return 0.0
+    
     re = (RHO_WATER * v_rel_mag * diam) / VISCOSITY
     cd = (24.0 / re) * (1 + 0.15 * re**0.687) + 0.42 / (1 + 4.25e4 * re**-1.16)
 
@@ -67,7 +76,7 @@ def calculate_drag_coefficient(Re):
     Schiller-Naumann correlation.
     """
     if Re <= 0:
-        return 0.0 # Should not happen if speed > 0
+        return 0.0  # Should not happen if speed > 0
     
     if Re < 0.1:
         return 24.0 / Re

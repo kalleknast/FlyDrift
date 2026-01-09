@@ -102,7 +102,12 @@ def plot_drifts(drifts, xlabel, title="Drift", labels=None):
     return ax_main
 
 
-def plot_drift(drift, ax=None, cmap='Blues', line_style='-', label=None):
+def plot_drift(drift,
+               ax=None,
+               cmap='Blues',
+               line_style='-',
+               label=None,
+               title=None):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(20, 6))
@@ -114,10 +119,12 @@ def plot_drift(drift, ax=None, cmap='Blues', line_style='-', label=None):
         
         rd = drift.get('river_depth', 1.5)
         # Handle potential array wrapping of scalar
-        if np.ndim(rd) > 0: rd = float(rd.flat[0])
+        if np.ndim(rd) > 0: 
+            rd = float(rd.flat[0])
             
         sv = drift.get('surface_velocity', 1.0)
-        if np.ndim(sv) > 0: sv = float(sv.flat[0])
+        if np.ndim(sv) > 0: 
+            sv = float(sv.flat[0])
         
         # Profile: Simulation y is 0 (bottom) to rd (surface)
         y_sim = np.linspace(0, rd, 100)
@@ -143,7 +150,7 @@ def plot_drift(drift, ax=None, cmap='Blues', line_style='-', label=None):
         ax._has_flow_profile = True
 
     if label is None:
-        label = f'tippet dia: {drift["tippet_diameter"]}, fly size: {drift["fly_mass"]}'
+        label = f'tippet dia: {1000*drift["tippet_diameter"]:.02}mm, fly weight: {1000*drift["fly_mass"]}g'
 
     x = drift['x'][::-1, :]
     y = drift['river_depth'] - drift['y'][::-1, :]
@@ -154,7 +161,7 @@ def plot_drift(drift, ax=None, cmap='Blues', line_style='-', label=None):
     ax.plot([drift['x'].min(), drift['x'].max()], [0, 0], 'k:', linewidth=1)
 
     # Plot line states
-    for i in range(0, len(t), 5): # Plot every 5th frame
+    for i in range(0, len(t), 5):  # Plot every 5th frame
         # Color fades from light blue (start) to dark blue (end)
         color = cmap(0.3 + 0.7 * (i / len(t)))
         ax.plot(x[:, i], y[:, i], color=color, linestyle=line_style)
@@ -163,7 +170,10 @@ def plot_drift(drift, ax=None, cmap='Blues', line_style='-', label=None):
     
     # if label is not None:
     #     ax.legend()
-    ax.set_title(f"{label}", fontsize=18)
+    if title:
+        ax.set_title(title)
+    else:
+        ax.set_title(f"{label}", fontsize=18)
     ax.set_xlabel("Distance (m)", fontsize=14)
     ax.set_ylabel("Depth (m)", fontsize=14)
     ax.set_ylim(drift['river_depth'], -0.2)
