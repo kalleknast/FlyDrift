@@ -34,6 +34,7 @@ tippet_diameters = {
     '0x': 0.28
     }
 
+tippet_densities = {'flourocarbon': 1780.0, 'nylon': 1150.0}
 
 def get_river_velocity(y_positions, river_depth, surface_velocity, river_profile_exp):
     """Vectorized velocity profile calculation."""

@@ -10,9 +10,8 @@ VISCOSITY = 0.001002        # Pa*s (Dynamic Viscosity of water at 20C)
 # C_DAMPING = 0.5           # Internal damping to kill high-freq vibrations
 # K_GROUND = 2000.0         # Spring constant for river bed interaction (N/m)
 # C_GROUND = 20.0           # Damping constant for river bed interaction
-TARGET_STRAIN = 0.01        # 1% max stretch
+TARGET_STRAIN = 0.01        # 1% max stretch (Relaxed for speed)
 DAMPING_RATIO = 0.9
-TIPPET_DENSITY = 1780.0     # flourocarbon density kg/m^3
 # --- Derived Drag Parameters ---
 CD_TIPPET_NORM = 1.2
 CD_TIPPET_TAN = 0.01
@@ -23,6 +22,7 @@ def simulate(
     fly_diameter=0.003,       # Core diameter (Buoyancy)
     bugginess=2.0,            # fly bushiness 1-4
     tippet_diameter=0.0002,
+    tippet_density=1780.0,
     tippet_length=1.5,
     rod_tip_speed_factor=0.8,
     river_depth=1.5,
@@ -31,16 +31,57 @@ def simulate(
     time_span=15.0,
     segments=20
 ):
+    """
+    Simulate a fly drifting in a river.
+
+    Parameters
+    ----------
+
+    fly_mass: float or string
+        If string then it should be a bead size string from utils.bead_weights (e.g. "2.5mm"). 
+        Otherwise mass of the fly in kg.
+    fly_diameter: float
+        Diameter of the fly in m.
+    bugginess: float
+        Bugginess of the fly (1-4).
+    tippet_diameter: float or string
+        If string then it should be a tippet diameter string from utils.tippet_diameters (e.g. "6x"). 
+        Otherwise diameter of the tippet in m.
+    tippet_density: float or string
+        If string then it should be a tippet density string from utils.tippet_densities (e.g. "nylon"). 
+        Otherwise density of the tippet material in kg/m^3.
+    tippet_length: float
+        Length of the tippet in m.
+    rod_tip_speed_factor: float
+        Speed of the rod tip relative to the surface velocity.
+    river_depth: float
+        Depth of the river in m.
+    surface_velocity: float
+        Velocity of the surface in m/s.
+    river_profile_exp: float
+        Exponent of the river profile.
+    time_span: float
+        Time span of the simulation in s.
+    segments: int
+        Number of segments in the tippet.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the simulation results and parameters used.
+    """
 
     if type(tippet_diameter) is str:
         tippet_diameter = ut.tippet_diameters[tippet_diameter] / 1000.0
     if type(fly_mass) is str:
         fly_mass = ut.bead_weights[fly_mass] / 1000.0
+    if type(tippet_density) is str:
+        tippet_density = ut.tippet_densities[tippet_density]
     
     # A. Calculate Node Mass
     # Line
     vol_tippet_total = np.pi * (tippet_diameter/2)**2 * tippet_length
-    mass_tippet_total = vol_tippet_total * TIPPET_DENSITY
+    mass_tippet_total = vol_tippet_total * tippet_density
     mass_node_tippet = mass_tippet_total / segments
     # Fly volumne - matters for buoyancy calculations
     # but ignore this since the vol_fly isn't air filled.
@@ -60,6 +101,7 @@ def simulate(
     # Young's Modulus for stiff braid/spectra is ~100 GPa.
     # Let's just use the enforced stiffness to guarantee user requirement.
     k_spring = max(k_spring_min, 100.0)  # Ensure it's at least 100 N/m
+    print(f"DEBUG: k_spring={k_spring:.2f}, mass_node={mass_node_tippet:.6e}")
     
     # C. Critical Damping (The "Anti-Bounce" Factor)
     # c_crit = 2 * sqrt(k * m)
@@ -91,7 +133,7 @@ def simulate(
         
         # Buoyancy
         buoy_forces = np.zeros(n_nodes)
-        buoy_forces[1:] = (mass_node_tippet / TIPPET_DENSITY) * RHO_WATER * G
+        buoy_forces[1:] = (mass_node_tippet / tippet_density) * RHO_WATER * G
         # Fly buoyancy since the vol_fly isn't air filled.
         # buoy_forces[0] = vol_fly * RHO_WATER * G
         forces[is_submerged, 1] += buoy_forces[is_submerged]
@@ -180,14 +222,14 @@ def simulate(
     
     pbar = tqdm(total=t_end-t_start, unit='s', desc="Simulating Drift")
     
-    def progress_wrapper(t, y):
-        pbar.n = min(t, t_end)
-        pbar.refresh()
-        return system_derivatives_vec(t, y)
-
+    # Wrapper to update progress bar only when t advances significantly?
+    # Actually, solve_ivp calls this for Jacobian too (same t).
+    # Printing here kills performance.
+    # Let's remove pbar update from the inner loop.
+    
     # Radau is essential for this high stiffness
     sol = solve_ivp(
-        progress_wrapper, 
+        system_derivatives_vec, 
         (t_start, t_end), 
         state0, 
         method='Radau', 
@@ -195,6 +237,8 @@ def simulate(
         rtol=1e-2, 
         atol=1e-3
     )
+    pbar.n = t_end
+    pbar.refresh()
     pbar.close()
 
     x = sol.y[0:2*segments+1:2]
@@ -219,7 +263,7 @@ def simulate(
         'river_profile_exp': river_profile_exp,
         'tippet_diameter': tippet_diameter,
         'tippet_length': tippet_length,
-        'tippet_density': TIPPET_DENSITY,
+        'tippet_density': tippet_density,
         'fly_mass': fly_mass,
         'fly_diameter': fly_diameter,
         'bugginess': bugginess,
