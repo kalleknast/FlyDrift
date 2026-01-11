@@ -2,7 +2,7 @@
 
 This project simulates the dynamics of the tippet and nymph fished euro-style in a river current. It uses a physics-based approach to model the interaction between the water flow, the tippet and nymph.
 
-**NOTE:** These simulations have **NOT** been experimentally verified. So while the trends (directions of the effects) likely are correct the absolute values may not be.
+**NOTE:** These simulations have **NOT** been experimentally verified. So while the trends (directions of the effects) likely are correct the absolute values may not be. At this point, the only verification has been by comparing with results from simulations at [Fly Fishing Reserach](https://www.flyfishingresearch.net/) -- a site I highly recommend for those enjoying a theoretical approach to understanding aspects of fly fishing.
 
 ## Visualization of the drifting fly
 
